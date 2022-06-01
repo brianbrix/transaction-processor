@@ -1,5 +1,7 @@
 package com.paymentology.transactionprocessor.services.impl;
 
+import com.paymentology.transactionprocessor.models.CompleteFail;
+import com.paymentology.transactionprocessor.models.PartialMatch;
 import com.paymentology.transactionprocessor.models.Response;
 import com.paymentology.transactionprocessor.models.Transaction;
 import com.paymentology.transactionprocessor.services.ProcessFilesService;
@@ -10,6 +12,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.text.similarity.JaroWinklerSimilarity;
 import org.springframework.stereotype.Service;
 
+import javax.servlet.http.Part;
 import java.io.FileNotFoundException;
 import java.lang.reflect.Field;
 import java.util.*;
@@ -54,81 +57,74 @@ public class ProcessFilesServiceImpl implements ProcessFilesService {
         return responseMap;
     }
     @Override
-    public List<Map> getMatches() throws IllegalAccessException {
-        List<Map> result = new ArrayList<>();
-        Map<Integer,List<Transaction>> completelyFailing = new HashMap<>();
-        Map<String,List<Transaction>> partiallyFailing = new HashMap<>();
-        completelyFailing.put(1, new ArrayList<>());
-        completelyFailing.put(2, new ArrayList<>());
-        partiallyFailing.put("transactionDate1", new ArrayList<>());
-        partiallyFailing.put("transactionDate2", new ArrayList<>());
-        partiallyFailing.put("transactionNarrative1", new ArrayList<>());
-        partiallyFailing.put("transactionNarrative2", new ArrayList<>());
-
-        OUTER_LOOP: for (Transaction transaction: list1NoMatch)
-        {
-            var orTransaction = list2NoMatch.stream().filter(transaction2-> transaction2.getTransactionId().equals(transaction.getTransactionId())).findFirst().orElse(null);
+    public  Map<String,Collection> getMatches() throws IllegalAccessException {
+        Map<String,Collection> result = new HashMap<>();
+        List<CompleteFail> completeFails = new ArrayList<>();
+        Set<PartialMatch> partialMatches = new HashSet<>();
+        OUTER_LOOP: for (Transaction transaction : list1NoMatch) {
+            var orTransaction = list2NoMatch.stream().filter(transaction2 -> transaction2.getTransactionId().equals(transaction.getTransactionId())).findFirst().orElse(null);
             if (!Objects.isNull(orTransaction)) {
-                log.info(orTransaction.getTransactionId());
+                PartialMatch partialMatch = new PartialMatch();
                 Field[] fields = Transaction.class.getDeclaredFields();
-                for (Field field: fields) {
+                for (Field field : fields) {
                     Object value1 = field.get(transaction);
                     Object value2 = field.get(orTransaction);
                     var similarity = findSimilarity(String.valueOf(value1), String.valueOf(value2));
-                    if (field.getName().equals("transactionAmount")) {
+                    if (field.getName().equals("transactionAmount") || field.getName().equals("walletReference")) {
                         if (similarity < 1) {
-                            completelyFailing.get(1).add(transaction);
-                            completelyFailing.get(2).add(orTransaction);
-                            continue OUTER_LOOP;
-                        }
-                    } else if (field.getName().equals("walletReference")) {
-                        if (similarity < 1) {
-                            completelyFailing.get(1).add(transaction);
-                            completelyFailing.get(2).add(orTransaction);
+                            completeFails.add(new CompleteFail(transaction,  orTransaction));
                             continue OUTER_LOOP;
                         }
 
-                    } else {
-                        if (field.getName().equals("transactionDate")) {
-                            if (similarity < 0.9) {
-                                completelyFailing.get(1).add(transaction);
-                                completelyFailing.get(2).add(orTransaction);
-                            }
-                            else
-                            {
-                                partiallyFailing.get("transactionDate1").add(transaction);
-                                partiallyFailing.get("transactionDate2").add(orTransaction);
-                            }
+
+                    } else if (field.getName().equals("transactionDate")) {
+                        if (similarity > 0.9) {
+                            partialMatch.setTransaction(transaction);
+                            partialMatch.setTransaction2(orTransaction);
+                            partialMatch.getFields().add("transactionDate");
                         }
 
-                        else if (field.getName().equals("transactionNarrative")) {
-                            if (similarity < 0.5) {
-                                completelyFailing.get(1).add(transaction);
-                                completelyFailing.get(2).add(orTransaction);
-                            }
-                            else
-                            {
-                                partiallyFailing.get("transactionNarrative1").add(transaction);
-                                partiallyFailing.get("transactionNarrative2").add(orTransaction);
-                            }
+
+                    } else if (field.getName().equals("transactionNarrative")) {
+                        if (similarity > 0.4) {
+                            partialMatch.setTransaction(transaction);
+                            partialMatch.setTransaction2(orTransaction);
+                            partialMatch.getFields().add("transactionNarrative");
                         }
+
                     }
+                }
+                if (partialMatch.getTransaction()!=null)
+                {
+                    partialMatches.add(partialMatch);
+                }
+                else
+                {
+                    completeFails.add(new CompleteFail( transaction,  orTransaction));
+
                 }
 
 
-            }
-            else {
-                log.info("Else,{}",transaction.getTransactionId());
-                completelyFailing.get(1).add(transaction);
+            } else {
+                completeFails.add(new CompleteFail( transaction,  new Transaction()));
             }
 
         }
-        var completeMissingIn2 = new ArrayList<>(CollectionUtils.disjunction(list2NoMatch, completelyFailing.get(2)));
-        completelyFailing.get(2).addAll(completeMissingIn2);
-        result.add(partiallyFailing);
-        result.add(completelyFailing);
-        completelyFailing.forEach((key, value)->log.info("FAILING:{}",value.size()));
-        partiallyFailing.forEach((key, value)->log.info("PARTIAL FAILING:{}",value.size()));
+        List<CompleteFail> remainingLst2 = new ArrayList<>();
+        list2NoMatch.forEach(match-> {
+            if (completeFails.stream().noneMatch(b->b.getTransaction2().equals(match)) && partialMatches.stream().noneMatch(b->b.getTransaction2().equals(match)))
+            {
+                remainingLst2.add(new CompleteFail( new Transaction(), match));
+            }
+
+        });
+        log.info("Remaining:{}",remainingLst2);
+        completeFails.addAll(remainingLst2);
+        result.put("completeFails", completeFails);
+        result.put("partialMatches", partialMatches);
+        log.info("COMPLETE: {}",completeFails.size());
+        log.info("PARTIAL: {}",partialMatches.size());
+        log.info("RESULT:{}", result);
         return result;
     }
     private double findSimilarity(String string1, String string2)
