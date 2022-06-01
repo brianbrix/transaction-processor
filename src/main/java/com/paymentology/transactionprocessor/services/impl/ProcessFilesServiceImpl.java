@@ -69,12 +69,12 @@ public class ProcessFilesServiceImpl implements ProcessFilesService {
         {
             var orTransaction = list2NoMatch.stream().filter(transaction2-> transaction2.getTransactionId().equals(transaction.getTransactionId())).findFirst().orElse(null);
             if (!Objects.isNull(orTransaction)) {
+                log.info(orTransaction.getTransactionId());
                 Field[] fields = Transaction.class.getDeclaredFields();
                 for (Field field: fields) {
                     Object value1 = field.get(transaction);
                     Object value2 = field.get(orTransaction);
                     var similarity = findSimilarity(String.valueOf(value1), String.valueOf(value2));
-                    log.info("SIMILARITY: {}", similarity);
                     if (field.getName().equals("transactionAmount")) {
                         if (similarity < 1) {
                             completelyFailing.get(1).add(transaction);
@@ -101,7 +101,7 @@ public class ProcessFilesServiceImpl implements ProcessFilesService {
                             }
                         }
 
-                        if (field.getName().equals("transactionNarrative")) {
+                        else if (field.getName().equals("transactionNarrative")) {
                             if (similarity < 0.5) {
                                 completelyFailing.get(1).add(transaction);
                                 completelyFailing.get(2).add(orTransaction);
@@ -118,13 +118,17 @@ public class ProcessFilesServiceImpl implements ProcessFilesService {
 
             }
             else {
+                log.info("Else,{}",transaction.getTransactionId());
                 completelyFailing.get(1).add(transaction);
             }
+
         }
+        var completeMissingIn2 = new ArrayList<>(CollectionUtils.disjunction(list2NoMatch, completelyFailing.get(2)));
+        completelyFailing.get(2).addAll(completeMissingIn2);
         result.add(partiallyFailing);
         result.add(completelyFailing);
-        log.info("FAILING: {}", completelyFailing);
-        log.info("PARTIALLY FAILING: {}", partiallyFailing);
+        completelyFailing.forEach((key, value)->log.info("FAILING:{}",value.size()));
+        partiallyFailing.forEach((key, value)->log.info("PARTIAL FAILING:{}",value.size()));
         return result;
     }
     private double findSimilarity(String string1, String string2)
