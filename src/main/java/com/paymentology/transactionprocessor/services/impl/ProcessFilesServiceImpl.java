@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 @Service
 public class ProcessFilesServiceImpl implements ProcessFilesService {
     private final ReadFileService readFileService;
-    private final Map<String, Response> responseMap=new HashMap<>();
+    private Map<String, Response> responseMap=new HashMap<>();
     private List<Transaction> list1NoMatch;
     private List<Transaction> list2NoMatch;
     @Override
