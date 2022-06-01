@@ -1,6 +1,6 @@
 package com.paymentology.transactionprocessor.services.impl;
 
-import com.paymentology.transactionprocessor.exceptions.ItemsEmptyException;
+import com.paymentology.transactionprocessor.exceptions.InvalidFileTypeException;
 import com.paymentology.transactionprocessor.models.CompleteFail;
 import com.paymentology.transactionprocessor.models.PartialMatch;
 import com.paymentology.transactionprocessor.models.Response;
@@ -14,7 +14,6 @@ import org.apache.commons.text.similarity.JaroWinklerSimilarity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -85,7 +84,7 @@ public class ProcessFilesServiceImpl implements ProcessFilesService {
     public  Map<String,Collection> getMatches() throws IllegalAccessException {
         if (list2NoMatch.isEmpty() && list1NoMatch.isEmpty())
         {
-            throw new ItemsEmptyException("No Items to match.Please upload two files.");
+            throw new InvalidFileTypeException("No Items to match.Please upload two files.");
         }
         Map<String,Collection> result = new HashMap<>();
         List<CompleteFail> completeFails = new ArrayList<>();
