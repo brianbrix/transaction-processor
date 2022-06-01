@@ -1,6 +1,8 @@
 package com.paymentology.transactionprocessor.controller;
 
+import com.paymentology.transactionprocessor.exceptions.InvalidFileException;
 import com.paymentology.transactionprocessor.exceptions.InvalidFileTypeException;
+import com.paymentology.transactionprocessor.exceptions.ItemsEmptyException;
 import com.paymentology.transactionprocessor.models.ErrorResponse;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
@@ -16,13 +18,29 @@ import org.springframework.web.multipart.support.MissingServletRequestPartExcept
 public class CustomExceptionHandler {
     @ExceptionHandler(InvalidFileTypeException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ResponseEntity<ErrorResponse> handleItemsEmptyException(
+    public ResponseEntity<ErrorResponse> handleInvalidFileTypeException(
             InvalidFileTypeException exception
     ){
-        log.error("Items to match not found.", exception);
+        log.error("Invalid file type", exception);
+        return buildErrorResponse(exception.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+    @ExceptionHandler(ItemsEmptyException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<ErrorResponse> handleEmptyItemsException(
+            ItemsEmptyException exception
+    ){
+        log.error("Empty Items.", exception);
         return buildErrorResponse(exception.getMessage(), HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(InvalidFileException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<ErrorResponse> handleInvalidFileException(
+            InvalidFileException exception
+    ){
+        log.error("Invalid file.", exception);
+        return buildErrorResponse(exception.getMessage(), HttpStatus.BAD_REQUEST);
+    }
     @ExceptionHandler(MissingServletRequestPartException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<ErrorResponse> handleMissingParams(

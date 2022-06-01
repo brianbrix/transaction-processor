@@ -1,5 +1,6 @@
 package com.paymentology.transactionprocessor.services.impl;
 
+import com.paymentology.transactionprocessor.exceptions.InvalidFileException;
 import com.paymentology.transactionprocessor.exceptions.InvalidFileTypeException;
 import com.paymentology.transactionprocessor.models.CompleteFail;
 import com.paymentology.transactionprocessor.models.PartialMatch;
@@ -64,12 +65,23 @@ public class ProcessFilesServiceImpl implements ProcessFilesService {
 
     @Override
     public Map<String, Response> upload(MultipartFile multipartFile1, MultipartFile multipartFile2) throws IOException {
+        String [] fileName1 = Objects.requireNonNull(multipartFile1.getOriginalFilename()).split("\\.");
+        String [] fileName2 = Objects.requireNonNull(multipartFile2.getOriginalFilename()).split("\\.");
+        if (!fileName2[fileName2.length-1].equals("csv") || !fileName1[fileName1.length-1].equals("csv"))
+        {
+            throw new InvalidFileTypeException("Invalid File Type. Ensure both files are .csv");
+        }
+        if (multipartFile1.getSize()<=0|| multipartFile2.getSize()<=0)
+        {
+            throw new InvalidFileException("Invalid file uploaded. Please check the files and upload agian.");
+        }
+
         log.info("UPLOADING");
         Path path1 = Files.createTempFile(multipartFile1.getOriginalFilename(),".csv");
         Path path2 = Files.createTempFile(multipartFile2.getOriginalFilename(),".csv");
         try {
             log.info("Temp file path: {},{}" , path1, path2);
-            multipartFile1.transferTo( path1.toFile());
+            multipartFile1.transferTo(path1.toFile());
             multipartFile2.transferTo(path2.toFile());
         } catch (Exception e) {
             e.printStackTrace();
@@ -84,7 +96,7 @@ public class ProcessFilesServiceImpl implements ProcessFilesService {
     public  Map<String,Collection> getMatches() throws IllegalAccessException {
         if (list2NoMatch.isEmpty() && list1NoMatch.isEmpty())
         {
-            throw new InvalidFileTypeException("No Items to match.Please upload two files.");
+            throw new InvalidFileTypeException("No Items to match.Please upload two .csv files.");
         }
         Map<String,Collection> result = new HashMap<>();
         List<CompleteFail> completeFails = new ArrayList<>();

@@ -5,6 +5,7 @@ import com.paymentology.transactionprocessor.services.ProcessFilesService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.MediaType;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,7 +20,7 @@ import java.util.Map;
 public class ProcessController {
     private final ProcessFilesService processFilesService;
     @PostMapping(value = "upload",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    Map<String, Response> compareFiles(@RequestParam("file1") MultipartFile multipartFile, @RequestParam("file2") MultipartFile multipartFile2) throws IOException, IllegalAccessException {
+    Map<String, Response> compareFiles(@Validated @RequestParam("file1") MultipartFile multipartFile,@Validated @RequestParam("file2") MultipartFile multipartFile2) throws IOException, IllegalAccessException {
         return processFilesService.upload(multipartFile, multipartFile2);
     }
     @GetMapping("/matches")

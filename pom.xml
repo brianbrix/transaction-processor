@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.paymentology</groupId>
 	<artifactId>transaction-processor</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.1</version>
 	<name>transaction-processor</name>
 	<description>Transaction Reconciliation App</description>
 	<properties>
