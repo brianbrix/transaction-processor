@@ -16,8 +16,9 @@ class ProcessFilesServiceImplTest {
     @Autowired
     ProcessFilesService processFilesService;
     @Test
-    void testProcessFiles() throws FileNotFoundException {
+    void testProcessFiles() throws FileNotFoundException, IllegalAccessException {
         processFilesService.process("testfiles/test.csv","testfiles/test2.csv");
+        processFilesService.getMatches();
     }
 
 

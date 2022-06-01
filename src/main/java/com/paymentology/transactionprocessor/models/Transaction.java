@@ -4,6 +4,7 @@ package com.paymentology.transactionprocessor.models;
 import com.paymentology.transactionprocessor.utils.LocalDateFormatter;
 import com.univocity.parsers.annotations.Convert;
 import com.univocity.parsers.annotations.NullString;
+import com.univocity.parsers.annotations.Trim;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -18,17 +19,23 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode
 public class Transaction {
 
-
+    //We make the fields public to allow us to use Reflection to access fields and their values
     @NullString(nulls = { "?", "-" })
-    private String profileName;
+    @Trim
+    public String profileName;
     @Convert(conversionClass = LocalDateFormatter.class, args = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime transactionDate;
-    private Double transactionAmount;
-    private String transactionNarrative;
-    private String transactionDescription;
-    private String transactionId;
-    private String transactionType;
-    private String walletReference;
+    public LocalDateTime transactionDate;
+    public Double transactionAmount;
+    @Trim
+    public String transactionNarrative;
+    @Trim
+    public String transactionDescription;
+    @Trim
+    public String transactionId;
+    @Trim
+    public String transactionType;
+    @Trim
+    public String walletReference;
 
 
 }
