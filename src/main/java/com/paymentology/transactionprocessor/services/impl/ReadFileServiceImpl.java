@@ -36,15 +36,13 @@ public class ReadFileServiceImpl implements ReadFileService {
     @Override
     public List<Transaction> readFile(String path) throws FileNotFoundException {
         log.info("PATH:{}", path);
-        URL resource = getClass().getClassLoader().getResource(path);
-
         var processor = getProcessor();
         CsvParserSettings parserSettings = new CsvParserSettings();
         parserSettings.setProcessor(processor);
         parserSettings.getFormat().setDelimiter(',');
         parserSettings.setHeaderExtractionEnabled(true);
         CsvParser parser = new CsvParser(parserSettings);
-        parser.parse(new FileReader(resource.getFile()));
+        parser.parse(new FileReader(path));
 
         return processor.getBeans();
     }

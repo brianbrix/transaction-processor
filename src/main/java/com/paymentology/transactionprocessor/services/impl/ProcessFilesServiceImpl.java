@@ -1,5 +1,6 @@
 package com.paymentology.transactionprocessor.services.impl;
 
+import com.paymentology.transactionprocessor.exceptions.ItemsEmptyException;
 import com.paymentology.transactionprocessor.models.CompleteFail;
 import com.paymentology.transactionprocessor.models.PartialMatch;
 import com.paymentology.transactionprocessor.models.Response;
@@ -11,10 +12,14 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.text.similarity.JaroWinklerSimilarity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.http.Part;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.lang.reflect.Field;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -23,10 +28,11 @@ import java.util.stream.Collectors;
 @Log4j2
 @Service
 public class ProcessFilesServiceImpl implements ProcessFilesService {
+    String tmpdir = System.getProperty("java.io.tmpdir");
     private final ReadFileService readFileService;
     private Map<String, Response> responseMap=new HashMap<>();
-    private List<Transaction> list1NoMatch;
-    private List<Transaction> list2NoMatch;
+    private List<Transaction> list1NoMatch= new ArrayList<>();
+    private List<Transaction> list2NoMatch= new ArrayList<>();
     @Override
     public Map<String, Response> process(String path1, String path2) throws FileNotFoundException {
         var tranList1 =new ArrayList<>(readFileService.readFile(path1).stream().collect(Collectors.toConcurrentMap(Transaction::getTransactionId, Function.identity(), (p, q) -> p)).values());
@@ -56,8 +62,31 @@ public class ProcessFilesServiceImpl implements ProcessFilesService {
 
         return responseMap;
     }
+
+    @Override
+    public Map<String, Response> upload(MultipartFile multipartFile1, MultipartFile multipartFile2) throws IOException {
+        log.info("UPLOADING");
+        Path path1 = Files.createTempFile(multipartFile1.getOriginalFilename(),".csv");
+        Path path2 = Files.createTempFile(multipartFile2.getOriginalFilename(),".csv");
+        try {
+            log.info("Temp file path: {},{}" , path1, path2);
+            multipartFile1.transferTo( path1.toFile());
+            multipartFile2.transferTo(path2.toFile());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        var res = process(path1.toString(),path2.toString());
+        Files.delete(path1);
+        Files.delete(path2);
+        return res;
+    }
+
     @Override
     public  Map<String,Collection> getMatches() throws IllegalAccessException {
+        if (list2NoMatch.isEmpty() && list1NoMatch.isEmpty())
+        {
+            throw new ItemsEmptyException("No Items to match.Please upload two files.");
+        }
         Map<String,Collection> result = new HashMap<>();
         List<CompleteFail> completeFails = new ArrayList<>();
         Set<PartialMatch> partialMatches = new HashSet<>();
