@@ -24,6 +24,7 @@ public class ReadFileServiceImpl implements ReadFileService {
         Map<String, String> colNames = new HashMap<>();
         colNames.put("profileName","ProfileName");
         colNames.put("transactionDate","TransactionDate");
+//        colNames.put("dateOfTrans","TransactionDate");
         colNames.put("transactionAmount","TransactionAmount");
         colNames.put("transactionNarrative","TransactionNarrative");
         colNames.put("transactionDescription","TransactionDescription");

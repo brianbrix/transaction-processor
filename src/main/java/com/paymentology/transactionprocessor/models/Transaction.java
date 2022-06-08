@@ -1,6 +1,8 @@
 package com.paymentology.transactionprocessor.models;
 
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.paymentology.transactionprocessor.utils.LocalDateFormatter;
 import com.univocity.parsers.annotations.Convert;
 import com.univocity.parsers.annotations.NullString;
@@ -23,6 +25,8 @@ public class Transaction {
     @NullString(nulls = { "?", "-" })
     @Trim
     public String profileName;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     @Convert(conversionClass = LocalDateFormatter.class, args = "yyyy-MM-dd HH:mm:ss")
     public LocalDateTime transactionDate;
     public Double transactionAmount;
@@ -36,6 +40,7 @@ public class Transaction {
     public String transactionType;
     @Trim
     public String walletReference;
+    public String dateOfTrans;
 
 
 }

@@ -37,8 +37,8 @@ public class ProcessFilesServiceImpl implements ProcessFilesService {
     public Map<String, Response> process(String path1, String path2) throws FileNotFoundException {
         var tranList1 =new ArrayList<>(readFileService.readFile(path1).stream().collect(Collectors.toConcurrentMap(Transaction::getTransactionId, Function.identity(), (p, q) -> p)).values());
         var tranList2 = new ArrayList<>(readFileService.readFile(path2).stream().collect(Collectors.toConcurrentMap(Transaction::getTransactionId, Function.identity(), (p, q) -> p)).values());
-        tranList1.sort(Comparator.comparing(Transaction::getTransactionId));
-        tranList2.sort(Comparator.comparing(Transaction::getTransactionId));
+//        tranList1.sort(Comparator.comparing(Transaction::getTransactionId));
+//        tranList2.sort(Comparator.comparing(Transaction::getTransactionId));
         log.info("SIZES: {},{}", tranList1.size(), tranList2.size());
         var fullMatchList =  new ArrayList<>(CollectionUtils.intersection(tranList1, tranList2));
         list1NoMatch = new ArrayList<>(CollectionUtils.disjunction(fullMatchList, tranList1));
@@ -121,7 +121,7 @@ public class ProcessFilesServiceImpl implements ProcessFilesService {
                         if (similarity > 0.9) {
                             partialMatch.setTransaction(transaction);
                             partialMatch.setTransaction2(orTransaction);
-                            partialMatch.getFields().add("transactionDate");
+                            partialMatch.getFields().add("Transaction Date");
                         }
 
 
@@ -129,7 +129,7 @@ public class ProcessFilesServiceImpl implements ProcessFilesService {
                         if (similarity > 0.4) {
                             partialMatch.setTransaction(transaction);
                             partialMatch.setTransaction2(orTransaction);
-                            partialMatch.getFields().add("transactionNarrative");
+                            partialMatch.getFields().add("Transaction Narrative");
                         }
 
                     }
