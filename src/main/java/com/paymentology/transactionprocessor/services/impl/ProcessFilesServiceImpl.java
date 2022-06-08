@@ -126,7 +126,7 @@ public class ProcessFilesServiceImpl implements ProcessFilesService {
 
 
                     } else if (field.getName().equals("transactionNarrative")) {
-                        if (similarity > 0.4) {
+                        if (similarity >= 0.6) {
                             partialMatch.setTransaction(transaction);
                             partialMatch.setTransaction2(orTransaction);
                             partialMatch.getFields().add("Transaction Narrative");
@@ -134,7 +134,7 @@ public class ProcessFilesServiceImpl implements ProcessFilesService {
 
                     }
                 }
-                if (partialMatch.getTransaction()!=null)
+                if (partialMatch.getTransaction()!=null && partialMatch.getTransaction2()!=null)
                 {
                     partialMatches.add(partialMatch);
                 }
